@@ -7,11 +7,17 @@ let mainWindow = null;
 let currentScan = null;
 const scanCache = new Map();
 
+function getIconPath() {
+  return path.join(__dirname, "../../assets/logo.png");
+}
+
 function createWindow() {
+  const iconPath = getIconPath();
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     backgroundColor: "#0f1115",
+    icon: iconPath,
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
@@ -182,6 +188,9 @@ ipcMain.handle("pick-directory", async () => {
 });
 
 app.whenReady().then(() => {
+  if (process.platform === "darwin") {
+    app.dock.setIcon(getIconPath());
+  }
   createWindow();
 
   app.on("activate", () => {

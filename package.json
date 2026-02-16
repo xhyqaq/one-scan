@@ -1,7 +1,7 @@
 {
-  "name": "disk-scan-mvp",
+  "name": "xiaowan-disk-cleaner",
   "version": "0.1.0",
-  "description": "Windows 11 磁盘占用扫描工具 (Electron MVP)",
+  "description": "小万专用-磁盘清理 (Electron MVP)",
   "main": "app/main/main.js",
   "scripts": {
     "start": "electron .",
@@ -14,20 +14,23 @@
   },
   "build": {
     "appId": "com.disk.scan",
-    "productName": "DiskScan",
+    "productName": "小万专用-磁盘清理",
+    "icon": "assets/logo.png",
     "asar": true,
     "directories": {
       "output": "dist"
     },
     "files": [
       "app/**/*",
+      "assets/**/*",
       "package.json"
     ],
     "win": {
       "target": [
         "portable"
       ],
-      "artifactName": "disk-scan-${version}.exe"
+      "icon": "assets/logo.png",
+      "artifactName": "xiaowan-disk-cleaner-${version}.exe"
     }
   }
 }
