@@ -1,0 +1,33 @@
+{
+  "name": "disk-scan-mvp",
+  "version": "0.1.0",
+  "description": "Windows 11 磁盘占用扫描工具 (Electron MVP)",
+  "main": "app/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build:win": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.disk.scan",
+    "productName": "DiskScan",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "disk-scan-${version}.exe"
+    }
+  }
+}

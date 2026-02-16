@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>磁盘占用扫描</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header>
+    <div class="title">磁盘占用扫描</div>
+    <div class="controls">
+      <label>选择磁盘:
+        <select id="diskSelect"></select>
+      </label>
+      <label>目录:
+        <input id="pathInput" class="path-input" placeholder="选择目录路径" readonly />
+      </label>
+      <button id="pickPathBtn" class="ghost">选择目录</button>
+      <input id="searchInput" class="search-input" placeholder="搜索当前列表" />
+      <button id="cancelBtn" class="ghost">中断</button>
+      <button id="backBtn" class="ghost">返回上一级</button>
+    </div>
+  </header>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="progress-wrap">
+    <div class="progress"><div id="progressBar"></div></div>
+    <div class="progress-meta" id="progressMeta">未开始扫描</div>
+  </div>
+
+  <div class="section-title">目录与文件</div>
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyTip" style="display:none;">暂无数据，请点击“开始扫描”。</div>
+  </main>
+
+  <div class="footer">* MVP 版本 - 仅演示核心扫描与目录钻取。</div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>

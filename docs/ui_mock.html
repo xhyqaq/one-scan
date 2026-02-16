@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>磁盘占用扫描 - UI Mock (交互版)</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151a21;
+      --card: #1b2230;
+      --muted: #9aa4b2;
+      --text: #e6ebf2;
+      --accent: #4aa3ff;
+      --warn: #ffb74a;
+      --danger: #ff6b6b;
+      --ok: #6bd88b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 20px 24px 12px;
+      border-bottom: 1px solid #222b3a;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    select, button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid #2a3446;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button.primary { background: #1e3a5f; border-color: #2b4a7a; }
+    button.ghost { background: transparent; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .breadcrumb {
+      padding: 10px 24px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .breadcrumb a {
+      color: var(--text);
+      text-decoration: none;
+      margin-right: 6px;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .progress-wrap {
+      padding: 12px 24px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .progress {
+      background: #222b3a;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress > div {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #7cc7ff);
+      transition: width 0.2s ease;
+    }
+    .progress-meta {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+      min-width: 220px;
+    }
+    main { padding: 12px 24px 24px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid #2a3446;
+      border-radius: 12px;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+      min-height: 120px;
+      position: relative;
+      cursor: pointer;
+    }
+    .card:hover { border-color: #3a4b66; }
+    .card.file { cursor: default; }
+    .name {
+      font-weight: 600;
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .size {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #2a3446;
+      color: var(--muted);
+    }
+    .tag.dir { color: var(--ok); border-color: #274736; }
+    .tag.file { color: #9ac5ff; border-color: #29405e; }
+    .tag.warn { color: var(--warn); border-color: #5c4622; }
+    .status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 11px;
+      color: var(--warn);
+    }
+    .footer {
+      padding: 0 24px 24px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .section-title {
+      padding: 12px 24px 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 20px 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">磁盘占用扫描</div>
+    <div class="controls">
+      <label>选择磁盘:
+        <select id="diskSelect"></select>
+      </label>
+      <button id="scanBtn" class="primary">开始扫描</button>
+      <button id="cancelBtn" class="ghost">中断</button>
+      <button id="backBtn" class="ghost">返回上一级</button>
+    </div>
+  </header>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="progress-wrap">
+    <div class="progress"><div id="progressBar"></div></div>
+    <div class="progress-meta" id="progressMeta">未开始扫描</div>
+  </div>
+
+  <div class="section-title">目录与文件</div>
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyTip" style="display:none;">暂无数据，请点击“开始扫描”。</div>
+  </main>
+
+  <div class="footer">* 交互版 UI Mock, 仅演示布局与扫描交互。</div>
+
+  <script>
+    const GB = 1024 * 1024 * 1024;
+    const MB = 1024 * 1024;
+
+    const fsData = {
+      disks: [
+        {
+          name: "C:",
+          path: "C:\\\\",
+          type: "dir",
+          children: [
+            {
+              name: "Users",
+              type: "dir",
+              children: [
+                {
+                  name: "xiaohu",
+                  type: "dir",
+                  children: [
+                    { name: "Desktop", type: "dir", children: [
+                      { name: "design.psd", type: "file", size: 1.6 * GB, mtime: "2026-02-08" },
+                      { name: "docs", type: "dir", children: [
+                        { name: "report.docx", type: "file", size: 24 * MB, mtime: "2026-02-01" },
+                        { name: "backup.zip", type: "file", size: 820 * MB, mtime: "2026-02-07" }
+                      ] }
+                    ] },
+                    { name: "Downloads", type: "dir", children: [
+                      { name: "movie.mkv", type: "file", size: 4.8 * GB, mtime: "2026-01-22" },
+                      { name: "setup.exe", type: "file", size: 260 * MB, mtime: "2026-02-10" },
+                      { name: "assets", type: "dir", children: [
+                        { name: "img001.png", type: "file", size: 12 * MB, mtime: "2026-01-15" },
+                        { name: "img002.png", type: "file", size: 13 * MB, mtime: "2026-01-15" }
+                      ] }
+                    ] },
+                    { name: "Pictures", type: "dir", children: [
+                      { name: "trip", type: "dir", children: [
+                        { name: "day1.jpg", type: "file", size: 6 * MB, mtime: "2025-12-02" },
+                        { name: "day2.jpg", type: "file", size: 7 * MB, mtime: "2025-12-03" }
+                      ] },
+                      { name: "family.png", type: "file", size: 24 * MB, mtime: "2026-01-01" }
+                    ] },
+                    { name: "Videos", type: "dir", children: [
+                      { name: "camera", type: "dir", children: [
+                        { name: "clip1.mp4", type: "file", size: 1.2 * GB, mtime: "2025-10-11" },
+                        { name: "clip2.mp4", type: "file", size: 1.3 * GB, mtime: "2025-10-11" }
+                      ] },
+                      { name: "course.mp4", type: "file", size: 3.2 * GB, mtime: "2026-02-05" }
+                    ] },
+                    { name: "AppData", type: "dir", children: [
+                      { name: "Local", type: "dir", children: [
+                        { name: "Temp", type: "dir", children: [
+                          { name: "tmp1.dat", type: "file", size: 220 * MB, mtime: "2026-02-14" }
+                        ] }
+                      ] }
+                    ] },
+                    { name: "notes.txt", type: "file", size: 2.4 * MB, mtime: "2026-01-03" }
+                  ]
+                }
+              ]
+            },
+            { name: "Windows", type: "dir", status: "no_access", children: [] },
+            { name: "Program Files", type: "dir", children: [
+              { name: "Microsoft Office", type: "dir", children: [
+                { name: "office.bin", type: "file", size: 900 * MB, mtime: "2026-02-02" }
+              ] }
+            ] },
+            { name: "pagefile.sys", type: "file", size: 16 * GB, mtime: "2026-02-10" },
+            { name: "hiberfil.sys", type: "file", size: 9 * GB, mtime: "2026-02-11" },
+            { name: "OneDrive", type: "dir", children: [
+              { name: "work", type: "dir", children: [
+                { name: "slides.pptx", type: "file", size: 86 * MB, mtime: "2026-02-04" }
+              ] }
+            ] }
+          ]
+        },
+        {
+          name: "D:",
+          path: "D:\\\\",
+          type: "dir",
+          children: [
+            { name: "Work", type: "dir", children: [
+              { name: "repo", type: "dir", children: [
+                { name: "build.zip", type: "file", size: 1.4 * GB, mtime: "2026-02-12" }
+              ] }
+            ] },
+            { name: "Media", type: "dir", children: [
+              { name: "music", type: "dir", children: [
+                { name: "album.flac", type: "file", size: 800 * MB, mtime: "2025-08-21" }
+              ] }
+            ] },
+            { name: "backup.iso", type: "file", size: 6.8 * GB, mtime: "2026-01-20" }
+          ]
+        },
+        {
+          name: "E:",
+          path: "E:\\\\",
+          type: "dir",
+          children: [
+            { name: "Photos", type: "dir", children: [
+              { name: "wedding", type: "dir", children: [
+                { name: "img001.jpg", type: "file", size: 10 * MB, mtime: "2024-08-11" }
+              ] }
+            ] },
+            { name: "tools.exe", type: "file", size: 42 * MB, mtime: "2026-02-01" }
+          ]
+        }
+      ]
+    };
+
+    const state = {
+      currentDisk: null,
+      currentNode: null,
+      currentScan: null,
+      lastScanStatus: "未开始扫描"
+    };
+
+    function computeSizes(node) {
+      if (node.type === "file") {
+        node.sizeFinal = node.size || 0;
+        return node.sizeFinal;
+      }
+      if (node.status === "no_access") {
+        node.sizeFinal = null;
+        return 0;
+      }
+      let sum = 0;
+      const children = node.children || [];
+      for (const c of children) sum += computeSizes(c);
+      node.sizeFinal = sum;
+      return sum;
+    }
+
+    function formatSize(bytes) {
+      if (bytes == null) return "未知";
+      if (bytes >= GB) return (bytes / GB).toFixed(1) + " GB";
+      if (bytes >= MB) return (bytes / MB).toFixed(1) + " MB";
+      return (bytes / 1024).toFixed(1) + " KB";
+    }
+
+    function getNodePath(node) {
+      const names = [];
+      let cur = node;
+      while (cur) {
+        names.push(cur.name);
+        cur = cur.parent || null;
+      }
+      return names.reverse();
+    }
+
+    function prepareTree() {
+      for (const disk of fsData.disks) {
+        computeSizes(disk);
+        walk(disk, null);
+      }
+    }
+
+    function walk(node, parent) {
+      node.parent = parent;
+      node.scanned = false;
+      node.scanning = false;
+      node.visibleCount = 0;
+      node.partialSize = 0;
+      if (node.children) {
+        for (const c of node.children) walk(c, node);
+      }
+    }
+
+    function setCurrent(node) {
+      state.currentNode = node;
+      if (node.type === "dir" && node.status !== "no_access") {
+        if (!node.scanned && !node.scanning) startScan(node);
+      }
+      render();
+    }
+
+    function startScan(node) {
+      if (!node || node.type !== "dir" || node.status === "no_access") return;
+      if (node.scanning || node.scanned) return;
+
+      node.scanning = true;
+      state.lastScanStatus = "扫描中";
+
+      const children = node.children || [];
+      let idx = node.visibleCount || 0;
+
+      if (state.currentScan?.timer) clearInterval(state.currentScan.timer);
+
+      const timer = setInterval(() => {
+        if (idx >= children.length) {
+          clearInterval(timer);
+          node.scanning = false;
+          node.scanned = true;
+          node.partialSize = node.sizeFinal || node.partialSize;
+          state.lastScanStatus = "完成";
+          render();
+          return;
+        }
+
+        node.visibleCount = idx + 1;
+        node.partialSize = sumChildrenSize(node, node.visibleCount);
+        idx++;
+        render();
+      }, 140);
+
+      state.currentScan = { node, timer };
+      render();
+    }
+
+    function cancelScan() {
+      if (state.currentScan?.timer) {
+        clearInterval(state.currentScan.timer);
+        state.currentScan.node.scanning = false;
+        state.lastScanStatus = "已中断";
+        state.currentScan = null;
+        render();
+      }
+    }
+
+    function sumChildrenSize(node, count) {
+      let total = 0;
+      const children = node.children || [];
+      for (let i = 0; i < count; i++) {
+        const c = children[i];
+        total += (c.type === "file") ? (c.sizeFinal || 0) : (c.sizeFinal || 0);
+      }
+      return total;
+    }
+
+    function renderBreadcrumb() {
+      const el = document.getElementById("breadcrumb");
+      const path = getNodePath(state.currentNode);
+      el.innerHTML = "路径: " + path.map((name, i) => {
+        return `<a href=\"#\" data-idx=\"${i}\">${name}</a>` + (i < path.length - 1 ? " &gt; " : "");
+      }).join("");
+
+      el.querySelectorAll("a").forEach(a => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          let cur = state.currentNode;
+          let idx = parseInt(a.dataset.idx, 10);
+          const pathNodes = [];
+          while (cur) { pathNodes.unshift(cur); cur = cur.parent; }
+          setCurrent(pathNodes[idx]);
+        });
+      });
+    }
+
+    function renderProgress() {
+      const bar = document.getElementById("progressBar");
+      const meta = document.getElementById("progressMeta");
+      const node = state.currentScan?.node;
+
+      if (!node) {
+        bar.style.width = "0%";
+        meta.textContent = state.lastScanStatus;
+        return;
+      }
+
+      const total = (node.children || []).length || 1;
+      const done = node.visibleCount || 0;
+      const pct = Math.min(100, Math.round((done / total) * 100));
+      bar.style.width = pct + "%";
+      meta.textContent = `扫描中: ${done}/${total} 项 · ${formatSize(node.partialSize)} · ${node.name}`;
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById("grid");
+      const empty = document.getElementById("emptyTip");
+      grid.innerHTML = "";
+
+      const node = state.currentNode;
+      if (!node || node.type !== "dir") return;
+
+      const children = node.children || [];
+      const visibleCount = node.scanning || node.scanned ? node.visibleCount : 0;
+      const list = children.slice(0, visibleCount).sort((a, b) => {
+        const sa = a.sizeFinal ?? 0;
+        const sb = b.sizeFinal ?? 0;
+        return sb - sa;
+      });
+
+      empty.style.display = (visibleCount === 0) ? "block" : "none";
+
+      for (const item of list) {
+        const card = document.createElement("div");
+        card.className = "card " + (item.type === "file" ? "file" : "dir");
+        card.innerHTML = `
+          <div class=\"name\" title=\"${item.name}\">${item.name}</div>
+          <div class=\"size\">${renderSizeText(item)}</div>
+          <div class=\"meta\">
+            <span class=\"tag ${item.type === "dir" ? "dir" : "file"}\">${item.type === "dir" ? "目录" : "文件"}</span>
+            ${item.type === "dir" ? `<span>子项 ${item.children?.length ?? 0}</span>` : `<span>修改: ${item.mtime}</span>`}
+          </div>
+          ${item.status === "no_access" ? `<div class=\"status\">无权限/未扫描</div>` : ""}
+        `;
+        if (item.type === "dir" && item.status !== "no_access") {
+          card.addEventListener("click", () => setCurrent(item));
+        }
+        grid.appendChild(card);
+      }
+    }
+
+    function renderSizeText(item) {
+      if (item.type === "file") return formatSize(item.sizeFinal);
+      if (item.status === "no_access") return "未知";
+      if (item.scanned) return formatSize(item.sizeFinal);
+      if (item.scanning) return formatSize(item.partialSize);
+      return "待扫描";
+    }
+
+    function render() {
+      renderBreadcrumb();
+      renderProgress();
+      renderGrid();
+      document.getElementById("cancelBtn").disabled = !state.currentScan;
+      document.getElementById("backBtn").disabled = !state.currentNode?.parent;
+    }
+
+    function bindUI() {
+      const select = document.getElementById("diskSelect");
+      select.innerHTML = fsData.disks.map((d, i) => `<option value=\"${i}\">${d.name}</option>`).join("");
+
+      select.addEventListener("change", () => {
+        const disk = fsData.disks[parseInt(select.value, 10)];
+        state.currentDisk = disk;
+        state.lastScanStatus = "未开始扫描";
+        setCurrent(disk);
+      });
+
+      document.getElementById("scanBtn").addEventListener("click", () => {
+        if (state.currentNode) startScan(state.currentNode);
+      });
+
+      document.getElementById("cancelBtn").addEventListener("click", () => cancelScan());
+
+      document.getElementById("backBtn").addEventListener("click", () => {
+        if (state.currentNode?.parent) setCurrent(state.currentNode.parent);
+      });
+    }
+
+    prepareTree();
+    bindUI();
+    state.currentDisk = fsData.disks[0];
+    setCurrent(state.currentDisk);
+  </script>
+</body>
+</html>
